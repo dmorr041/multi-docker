@@ -10,7 +10,7 @@ before_install:
   - docker build -t algorhythm92/react-test -f ./client/Dockerfile.dev ./client
 
 script:
-  - docker run -e CLI=true algorhythm92/react-test npm test
+  - docker run -e CI=true algorhythm92/react-test npm test
 
 after_success:
   # build all images for all containers
