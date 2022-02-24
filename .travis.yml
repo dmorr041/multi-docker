@@ -1,0 +1,24 @@
+language: generic
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t quinn/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CLI=true quinn/react-test npm test
+
+after_success:
+  # build all images for all containers
+  - docker build -t quinn/multi-client ./client
+  - docker build -t quinn/multi-nginx ./nginx
+  - docker build -t quinn/multi-server ./server
+  - docker build -t quinn/multi-worker ./worker
+  # Log into docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # push all images to docker hub for our travis build to pull down
+  - docker push quinn/multi-client
+  - docker push quinn/multi-nginx
+  - docker push quinn/multi-server
+  - docker push quinn/multi-worker
