@@ -1,0 +1,51 @@
+version: '3'
+services:   # Each child of services can be referenced by name, sometimes it is the hostname you're looking for
+  postgres:
+    image: 'postgres:latest'
+    environment:
+      - POSTGRES_PASSWORD=postgres_password   # Default password for a postgres container instance
+  redis:
+    image: 'redis:latest'
+  nginx:
+    depends_on:
+      - api
+      - client
+    restart: always     # We use an always restart policy since the nginx router is the most essential and needs to be up
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '3050:80'       # Map port 3050 on our machine to port 80 in the container (default nginx port)
+  api:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./server
+    volumes:
+      - /app/node_modules   # Instructs docker to ignore node_modules and not listen for changes there
+      - ./server:/app       # Instructs docker to listen for changes in ./server and apply them to ./app
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379     # Default port for redis (google it)
+      - PG_USER=postgres
+      - PG_PASSWORD=postgres_password
+      - PG_HOST=postgres
+      - PG_DATABASE=postgres
+      - PG_PORT=5432        # Default port for postgres (google it)
+  client:
+    stdin_open: true
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./client
+    volumes:
+      - /app/node_modules
+      - ./client:/app
+  worker:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./worker
+    volumes:
+      - /app/node_modules
+      - ./worker:/app
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
